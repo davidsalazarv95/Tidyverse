@@ -1,0 +1,37 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Programs
+
+## The Pipe %>%
+
+```{r}
+library(magrittr)
+diamonds <- ggplot2::diamonds
+```
+
+Using a pipe doesn’t affect what the code does; behind the scenes it is run in (almost) the exact same way. What the pipe does is change how you write, and read, code.
+
+In particular, it helps you to avoid either over writing the same object or coming up with different names.
+
+You shouldn't use the pipe when: you've used it too much, or you're working with two types of objects, or the relationship that you're working with is not linear. 
+
+## Functions 
+
+You should consider writing a function whenever you’ve copied and pasted a block of code more than twice (i.e. you now have three copies of the same code). 
+
+The more repetition you have in your code, the more places you need to remember to update when things change (and they always could!), and the more likely you are to create bugs over time.
+
+cmd + shift + r
+
+——————————————————————————————————————————————————————————————————————
+
+# IF-statements
+
+You should never use | or & in an if statement: these are vectorised operations that apply to multiple values. If you do have a logical vector, you can use any() or all() to collapse it to a single value.
+
+
+
+

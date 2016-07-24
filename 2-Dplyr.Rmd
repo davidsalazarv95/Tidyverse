@@ -1,0 +1,149 @@
+---
+title: "2-dplyr"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(nycflights13))
+suppressPackageStartupMessages(library(tibble))
+```
+
+## Dplyr: Data manipulation
+
+There are six main verbs for data manipulations:
+
+* Filter: to pick some rows based on a boolean test.
+* Select: to pick some columns.
+* Arrange: to arrange the rows in a specified order.
+* Mutate: to create new variables.
+* Summarise: to collapse a data frame in one value.
+* Group_by: to group a dataframe by some unique values of the variables. 
+
+Let's start with the tibble: a modern take on the dataframe.
+
+```{r}
+flights
+```
+
+Any duplicated rows? 
+
+```{r}
+dplyr::distinct(flights)
+```
+
+A tibble won't change strings to factor and has a handy print output. To change to tibble, use
+__as_tibble()__ function. 
+
+# Filter
+
+Let's start with the first verb: filter. Subset the rows with a logical condition. Let's take all the flights in 2013 in the first of January. Note: the conditions are taken as intersection. 
+
+```{r}
+flights %>%
+  filter(month == 1, day == 1)
+```
+
+To take union of logical conditions, put the union in one logical condition. Let's say all the flights in June, July and August
+
+```{r}
+flights %>%
+  filter(month %in% c(6,7,8))
+```
+
+# Arrange
+
+The verb to arrange the rows in a particular order. The default is in ascending order. If more variables
+are added, they'll be used hierarchically. With __desc()__ , it's organized in descending order.
+
+
+```{r}
+flights %>%
+  arrange(desc(arr_delay), desc(dep_delay))
+```
+
+## Exercise
+
+Sort flights to find the most delayed flights. Find the flights that left earliest. Most delayed:
+
+```{r}
+flights %>%
+  arrange(desc(arr_delay), desc(dep_delay))
+```
+
+Left earlies:
+
+```{r}
+flights %>%
+  arrange(dep_delay)
+```
+
+# Select
+
+Select: the verb to select some variables of the data frame
+
+```{r}
+flights %>%
+  select(ends_with("delay"), starts_with("arr"), starts_with("sched"), starts_with("dep"))
+```
+
+# Mutate
+
+__Mutate()__: the verb to create new variables with functions of existing variables. 
+
+```{r}
+flights %>%
+  mutate(gain = arr_delay - dep_delay,
+       speed = distance / air_time * 60)
+```
+
+If you only want to keep the new variables, use __transmute()__ : 
+
+```{r}
+transmute(flights,
+          dep_time, # equivalent to keep in new dataframe that transmutes creates
+          # dep_time is hour and then minutes. Last two digits, minutes
+          hour = dep_time %/% 100, # keep the integer part of the division
+          minute = dep_time %% 100 # keep the remainder part of division
+)
+```
+
+# Rename
+
+__rename()__ : the verb to rename variables:
+
+```{r}
+flights %>%
+  rename(departure_time = dep_time)
+```
+
+# Summarise
+
+__sumarise()__ : the verb to collapse a data frame into one dimension. 
+
+```{r, include=FALSE}
+flights %>%
+  summarise(avg_delay = mean(arr_delay, na.rm = TRUE))
+```
+
+# Group_by
+
+__group_by()__ : the verb to group variables according to some unique combination of values, and then perform operations on these groups.
+
+```{r}
+flights %>%
+  filter(!is.na(arr_delay), !is.na(dep_delay)) %>%
+  group_by(year, month, day, origin) %>% # For each day of the year, for each one of the 3 airports, compute the mean delay in both arrival 
+  # and departure
+  summarise_each(funs(mean), avg_arr_delay = arr_delay, avg_dep_delay = dep_delay) %>%
+  mutate(total_avg_delay = avg_arr_delay + avg_dep_delay)
+```
+
+
+

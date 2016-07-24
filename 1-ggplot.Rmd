@@ -1,0 +1,174 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+In brief, the grammar tells us that a statistical graphic is a mapping from __data__ to __aesthetic__ attributes (colour, shape, size) of __geometric objects__ (points, lines, bars).
+
+Quick example: map the variables to the x and y axis, respectively, and represent them with point as geomtrical figures
+
+```{r, message=FALSE, warning=FALSE}
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(dplyr))
+library(GGally)
+library(ggthemes)
+library(MASS)
+```
+
+```{r}
+mpg %>%
+  ggplot(mapping = aes(x = displ, y = hwy)) +
+    geom_point(alpha = 0.3) +
+    theme_tufte()
+```
+
+To add a dimension, map the dimension class to the plot through the use of a different color for the points. Different types of aesthetic attributes work better with different types of variables. For example, colour and shape work well with categorical variables, while size works well for continuous variables
+
+```{r}
+mpg %>%
+  ggplot(mapping = aes(x = displ, y = hwy)) +
+    geom_point(mapping = aes(colour = class)) +
+    theme_tufte()
+```
+
+Instead of trying to make one very complex plot that shows everything at once, see if you can create a series of simple plots that tell a story, leading the reader from ignorance to knowledge.
+
+## Facetting
+
+Facetting creates tables of graphics by splitting the data into subsets and displaying the same graph for each subset. That is, you have a different graph for each value of the categorical variable using small multiples. It's important to let each small multiple to have a different scale, by setting the option scales to free. 
+
+```{r}
+mpg %>%
+  ggplot(aes(x = displ, y = hwy)) +
+    geom_point(alpha = 0.3) +
+    facet_wrap(~class, scales = "free")
+    
+```
+
+## Different geometric figures
+
+You're not constrained to map the data to a point, you can do use different strategies. For example, by fitting a line to the relationship in the scatterplot. If you have loaded the MASS package, you can fit a robust linear model to account for outliers. 
+
+```{r}
+mpg %>%
+  ggplot(mapping = aes(x = hwy, y = displ)) +
+    geom_point(alpha = 0.3) + geom_smooth(method = "rlm", se = FALSE)
+```
+
+## Boxplots
+
+Used when: you'll probably be interested to know how the values of the continuous variables vary with the levels of the categorical variable. You can use boxplots or violin. 
+
+```{r}
+mpg %>%
+  ggplot(mapping = aes(y = hwy, x = reorder(drv, hwy))) +
+    geom_boxplot()
+```
+
+```{r}
+mpg %>%
+  ggplot(mapping = aes(y = hwy, x = reorder(drv, hwy))) +
+    geom_violin()
+```
+
+## Plots for the distribution of a single variable
+
+Histograms and frequency polygons show the distribution of a single numeric variable. Both histograms and frequency polygons work in the same way: they bin the data, then count the number of observations in each bin. The only difference is the display: histograms use bars and frequency polygons use lines.
+
+```{r}
+ggplot(mpg, aes(hwy)) + geom_histogram(binwidth = 1)
+```
+
+```{r}
+ggplot(mpg, aes(hwy)) + geom_freqpoly(binwidth = 1) + theme_tufte()
+```
+
+Of course, you could try to do a kernel density estimation, but that would needlessly introduce assumptions and complexity to the calculations. 
+
+To compare the distribution of a single variable according to some categorical variable, you could use the fill argument or facetting. 
+
+```{r}
+ggplot(mpg, aes(displ, colour = drv)) + geom_freqpoly(binwidth = 0.5)
+```
+
+```{r}
+ggplot(mpg, aes(displ, fill = drv)) + geom_histogram(binwidth = 0.5) + facet_wrap(~drv, ncol = 1)
+```
+
+## Distribution for a discrete variable
+
+The discrete analogue of the histogram is the bar chart, geom bar(). For each category
+
+```{r}
+
+reorder_size <- function(x) {
+  factor(x, levels = names(sort(table(x))))
+}
+mpg %>%
+  ggplot(mapping = aes(reorder_size(manufacturer))) +
+    geom_bar(alpha = 0.7) +
+    coord_flip()
+```
+
+Bar plots can be confusing to construct, as the usual function expects the data to be unorganized, and starts counting how many observations are for each value of the categorical variable. If you already have the data in summarised way, use stat = identity.
+
+```{r}
+drugs <- data.frame(
+drug = c("a", "b", "c"), effect = c(4.2, 9.7, 6.1)
+)
+ggplot(drugs, aes(reorder(drug,effect), effect)) + geom_bar(stat = "identity")
+
+```
+
+Or even more simpler:
+
+```{r}
+drugs %>%
+  ggplot(mapping = aes(reorder(drug, effect), effect)) + 
+    geom_point()
+```
+
+## Time Series and Path plots
+
+```{r}
+library(gridExtra)
+g1 <- economics %>%
+  ggplot(mapping = aes(x = date, y = unemploy / pop)) +
+    geom_line()
+g2 <- economics %>%
+  ggplot(mapping = aes(x = date, y = uempmed)) +
+    geom_line()
+grid.arrange(g1, g2, ncol = 2)
+```
+
+While the unemployment rate reached in the last recession was not unprecedented, the median unemployment length was. To examine this relationship, we could draw and scatterplot and join the points adjacent in time with a line to recognize the time evolution.
+
+```{r}
+ggplot(economics, aes(unemploy / pop, uempmed)) + 
+  geom_path() +
+  geom_point()
+```
+
+But its difficult to recognize the time evolution.
+
+```{r}
+ggplot(economics, aes(unemploy / pop, uempmed)) +
+  geom_path(colour = "grey50") +
+  geom_point(aes(colour = date)) +
+  labs(
+    x = "Unemployment rate",
+    y = "Median length of unemployment"
+  )
+```
+
+We can see that unemployment rate and length of unemployment are highly correlated, but in recent years the length of unemployment has been increasing relative to the unemployment rate.
+
+## Lims and labels
+
+```{r}
+
+ggplot(mpg, aes(drv, hwy)) + geom_jitter(width = 0.25) + xlim("f", "r") +
+  ylim(20, 30)
+```
+
+

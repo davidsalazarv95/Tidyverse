@@ -1,0 +1,211 @@
+---
+title: "Strings in R"
+output: html_notebook
+---
+
+```{r}
+suppressPackageStartupMessages(library(stringr))
+library(stringi)
+library(readr)
+```
+
+# String Basics
+
+```{r}
+string2 <- 'If I want to include a "quote" inside a string, I use single quotes'
+writeLines(string2)
+```
+
+To get the length of a string:
+
+```{r}
+str_length(string2)
+```
+
+To combine strings: 
+
+```{r}
+str_c("combine","strings", sep = "-")
+str_c("prefix-", c("a", "b", "c"), "-suffix") # Note the recycling
+```
+```{r}
+name <- "Hadley"
+time_of_day <- "morning"
+birthday <- FALSE
+
+str_c("Good ", time_of_day, " ", name,
+  if (birthday) " and HAPPY BIRTHDAY",
+  "."
+)
+
+```
+
+```{r}
+x <- c("Apple", "Banana", "Pear")
+str_sub(x, start = 1, end = 3)
+# negative numbers count backwards from end
+str_sub(x, start = -3, end = -1)
+# Modify string
+(str_sub(x, 1, 1) <- str_to_lower(str_sub(x, 1, 1)))
+```
+```{r}
+str_sort(x)
+```
+```{r}
+y <- "My name is"
+z <- "Genghis"
+paste0(y," ",z)
+str_c(y, z, sep = " ")
+```
+
+Use __str_length()__ and __str_sub()__ to extract the middle character from a character vector.
+
+```{r}
+w <- c("Genghis","Khan","Marco Polo")
+mid <- str_length(w)/2
+w %>%
+  str_sub(start = mid, end = mid)
+```
+
+# Matching patterns with Regular Expressions
+
+To see how a regular expression plays out with some character vector, use __str_view()__
+
+```{r}
+x <- c("apple", "banana", "pear")
+str_view_all(x, "an")
+```
+
+The dot is used to represent any possible character. So .a. will match any three letter sequence with an 'a' in between. 
+
+```{r}
+str_view_all(x, ".a.")
+```
+
+The caret ^ will make sure that you're matching the start of the string. Such that, ^a will match if the first letter is a
+
+```{r}
+
+```
+
+```{r}
+x <- c("apple", "banana", "pear")
+str_view(x, "^p")
+```
+
+Match at the end, use $.
+
+```{r}
+str_view(x, "a$")
+```
+
+To force a regular expression to only match a complete string, anchor it with both ^ and $. Remember, each component of the string vector is treated as a different string. 
+
+```{r}
+x <- c("apple pie", "apple", "apple cake")
+str_view(x, "^apple$")
+```
+
+# Putting it together
+
+To determine if a character vector matches a pattern, use str_detect(). It returns a logical vector the same length as the input:
+
+```{r}
+x <- c("apple", "banana", "pear")
+str_detect(x, "e")
+```
+
+```{r}
+words <- c("avocado","devil","advocate","lawyerly","Coase","Economics")
+str_detect(words, "(^C)|(c)" ) # Starts with C or has a c in it. 
+```
+
+```{r}
+str_detect(words, "^([aeiou])|([aeiou])$") #starts or ends with a lowercase vocal
+```
+
+To select elements that have a common pattern: 
+
+```{r}
+str_subset(words, "[^aeiou]$") # Words that do not end up in a vocal
+```
+
+```{r}
+str_subset(words, "[sv]") #words that contain either an s or a v, or both
+```
+
+To count the number of matches per string:
+
+```{r}
+str_count(words, "[sv]")
+```
+
+Find all words that start or end with a consonant. 
+
+```{r}
+str_subset(words, "[^aeiou]$")
+```
+
+Find all words that start with a vowel and end with a consonant.
+
+```{r}
+str_subset(words, "(^[aeiou]) & ([^aeiou])")
+```
+
+Are there any words that contain at least one of each different vowel?
+
+```{r}
+str_subset(words, "(a+) & (e+) & (i+) & (o+) & (u+)")
+```
+
+What word has the highest number of vowels? What word has the highest proportion of vowels? 
+
+```{r}
+count <- str_count(words, "[aeiou]")
+len <- str_length(words)
+words[which.max(count/len)]
+```
+
+# Extract matches
+
+with str_extract, we can extrac what is the match.
+
+```{r}
+setwd(dir = "/Users/david_salazarv/Desktop/Tidyverse")
+sentences <- read_lines("harvard-sentences.txt")
+head(sentences)
+```
+
+
+```{r}
+colours <- c("red", "orange", "yellow", "green", "blue", "purple")
+colour_match <- str_c(colours, collapse = "|")
+colour_match
+```
+
+Now we can select the sentences that contain a colour, and then extract the colour to figure out which one it is:
+
+```{r}
+has_colour <- str_subset(sentences, colour_match)
+matches <- str_extract(has_colour, colour_match)
+head(matches)
+```
+
+Extract all the matches for every single string:
+
+```{r}
+head(str_extract_all(has_colour, colour_match, simplify = TRUE))
+```
+
+str_replace() and str_replace_all() allow you to replace matches with new strings:
+
+```{r}
+x <- c("apple", "pear", "banana")
+str_replace_all(x, "[aeiou]", "-")
+```
+
+```{r}
+x <- c("1 house", "2 cars", "3 people")
+str_replace_all(x, c("1" = "one", "2" = "two", "3" = "three"))
+```
+

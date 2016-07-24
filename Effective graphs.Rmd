@@ -1,0 +1,92 @@
+---
+title: "Creating more effective graphs"
+author: "DS"
+date: '`r Sys.Date()`'
+output:
+  tufte::tufte_handout:
+    citation_package: natbib
+    latex_engine: xelatex
+  tufte::tufte_book:
+    citation_package: natbib
+    latex_engine: xelatex
+  tufte::tufte_html: default
+link-citations: yes
+subtitle: An implementation in R Markdown
+---
+
+```{r setup, include=FALSE}
+library(tufte)
+# invalidate cache when the tufte version changes
+knitr::opts_chunk$set(tidy = FALSE, cache.extra = packageVersion('tufte'))
+options(htmltools.dir.version = FALSE)
+```
+
+# Creating more effective graphs
+
+In the grammar of graphs, a graph is nothing more than a mapping from the data to the aesthetics of some geometric figure. Thus, the understanding of the data that the graph represents hinges on the geometric figures and their aesthetics.Essentially, a graph is always a comparison between the different geometric figures: their size, their distance, their color, etc. However, not all of these differences are equally identifiable to the human eye; thus, not all mappings from data to geometric figures work well.
+
+What do we mean by an effective graph? One graph is more effective than another if its quantitative information can be decoded more quickly or more easily by most observers. According to experiments, the way people read the encoding the data most accurately is the following: 
+
+1. Position along a common scale
+2. Length
+3. Angle/Slope
+4. Area 
+5. Volume
+
+Thus, to infer differences from areas (as in pie charts), it's extremely difficult. Instead, use dot charts that use the different positions along a common scale to encode the differences in the data. 
+
+```{r, message=FALSE, warning=FALSE, include=FALSE}
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(dplyr))
+library(GGally)
+library(ggthemes)
+library(MASS)
+```
+
+```{r, echo=TRUE, fig.cap="The average city mileage for the different models", fig.height=3.5, fig.margin=TRUE, fig.width=3.5, message=FALSE, warning=FALSE}
+mpg[1:20,] %>%
+  group_by(model) %>%
+  summarise(avg_cty = mean(cty, na.rm = T)) %>%
+  ggplot(mapping = aes(x = avg_cty, y = reorder(model, avg_cty))) +
+    geom_point(alpha = 0.5) +
+    theme_fivethirtyeight() +
+    labs(x = 'avg_cty')
+```
+
+# Distributions of one variable
+
+Histograms do a reasonable way of showing a variable distribution, but are not very useful for comparing distributions
+
+```{r, echo=TRUE, fig.cap="A poin graph to see the distribution of highway mileage for the different models ", fig.fullwidth=TRUE, fig.height=2, message=FALSE, warning=FALSE, fig-fullwidth, fig.width=10}
+
+mpg %>%
+  ggplot(mapping = aes(hwy)) +
+  geom_histogram(binwidth = 1, alpha = 0.2)
+
+```
+
+## Comparing distributions
+
+Boxplots are very useful for comparing the distribution of some variable, according to some levels for some categorical variable. The edges of the box represent the 25th percentile and the 75th percentile, respectively, the middle line the median; the lines go till the minimum and maximum observation that is not farther from the edge by 1.25 times the inter quartile range (the difference between the 3rd and the 1st quartile). 
+
+```{r, echo=TRUE, fig.cap="The average city mileage for the different models", fig.height=3.5, fig.margin=TRUE, fig.width=3.5, message=FALSE, warning=FALSE}
+mpg[1:40,] %>%
+  ggplot(mapping = aes(x = reorder(factor(cyl),cty), y = cty)) +
+    geom_boxplot() +
+    xlab("Number of cylinders") +
+    ylab("City mileage per gallon")
+```
+
+## Relationship between two continuous variables
+
+A scatterplot is the way to go to visualize the relationship between two continuous variables. 
+
+```{r, message=FALSE, warning=FALSE, fig.cap = "The displacements in the motor vs the highway mileage per galon", fig.width = 10, fig.height = 2, fig.fullwidth = TRUE}
+mpg %>%
+  ggplot(mapping = aes(y = hwy, x = displ)) +
+    geom_jitter(alpha = 0.3) +
+    geom_smooth(se = FALSE) +
+    theme_fivethirtyeight()
+```
+
+

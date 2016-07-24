@@ -1,0 +1,33 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r, message=FALSE, warning=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(readr)
+library(tibble)
+```
+
+
+```{r}
+baseball <- as_tibble(baseball)
+baseball %>%
+  select(id, year, rbi, ab)
+```
+
+```{r}
+baseball %>%
+  group_by(id) %>%
+  summarise(first = min(year)) %>%
+  right_join(baseball, by = "id") %>%
+  select(id, year, rbi, ab, first) %>%
+  filter(ab > 25) %>%
+  group_by(id) %>%
+  mutate(cyear = year + 1 - first) %>%
+  filter(id == "ruthba01") %>%
+  ggplot(mapping = aes(x = cyear, y = rbi/ab)) +
+  geom_line() + geom_point()
+```
+

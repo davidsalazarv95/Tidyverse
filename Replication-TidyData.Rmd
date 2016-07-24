@@ -1,0 +1,126 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r, message=FALSE, warning=FALSE}
+setwd(dir = "/Users/david_salazarv/GitHub/tidy-data/case-study")
+library(reshape2)
+library(ggplot2)
+library(plyr)
+library(stringr)
+library(MASS)
+library(dplyr)
+library(tidyr)
+library(readr)
+library(tibble)
+```
+
+```{r}
+deaths <- read_rds("deaths.rds")
+deaths <- as_tibble(deaths) %>%
+            filter(yod == 2008, mod != 0, dod != 0)
+deaths
+
+```
+
+Reproduce Mr. Wickham's first plot: number of deaths per hour, for all causes of death. 
+
+```{r, warning=FALSE}
+deaths %>%
+  group_by(hod) %>%
+  summarise(count = n()) %>%
+  ggplot(mapping = aes(x = hod, y = count)) +
+  geom_line() + geom_point() +
+  ylab("Number of Deaths") +
+  xlab("Hour of the Day") +
+  theme_minimal()
+```
+
+First, we count the number of deaths in each hour (hod) for each cause (cod):
+
+```{r}
+(per_hod_cod <- deaths %>%
+  group_by(hod, cod) %>%
+  summarise(count = n()) %>%
+  filter(!is.na(hod)))
+```
+
+```{r}
+codes <- read_csv("icd-main.csv")
+table_b <- per_hod_cod %>%
+  left_join(codes, by = c("cod"="code")) %>%
+  arrange(desc(count))
+```
+
+This means that rather than the total number, it makes more sense to compare the proportion of deaths in each hour. We compute this by breaking the dataset down by cod, and then transform()ing to add a new prop column, the hourly frequency divided by the total number of deaths from that cause.
+
+```{r}
+options(digits = 1)
+with_prop <- deaths %>%
+  group_by(cod) %>%
+  summarise(count_code = n()) %>%
+  right_join(table_b, by = "cod") %>%
+  mutate(prop = count/count_code)
+```
+
+We then compute the overall average death rate for each hour, and merge that back into the original dataset.
+
+```{r}
+(omg <- deaths %>%
+  group_by(hod) %>%
+  summarise(freq_all = n()) %>%
+  mutate(prop_all = freq_all/sum(freq_all)) %>%
+  right_join(with_prop, by = "hod"))
+```
+
+Next we compute a distance between the temporal pattern of each cause of death and the overall temporal pattern.
+
+```{r}
+(devi <- omg %>%
+        group_by(cod) %>%
+        summarise(n = sum(count),
+                dist = mean((prop-prop_all)^2)) %>%
+        filter(n > 50))
+  
+```
+
+We don’t know the variance characteristics of this estimator, but we can explore it visually by plotting n vs. deviation
+
+```{r}
+devi %>%
+  ggplot(mapping = aes(x = n, y = dist)) +
+  geom_point()
+
+```
+
+It seems that the distance decreases as the sample size increases, but not much else. Let's try a logarithmic scale:
+
+```{r}
+devi %>%
+  ggplot(mapping = aes(x = n, y = dist)) +
+  geom_point() +
+  scale_x_log10() +
+  scale_y_log10() +
+  geom_smooth()
+
+```
+
+```{r, warning=TRUE}
+devi$resid <- resid(rlm(log(dist) ~ log(n), data = devi))
+devi %>%
+  ggplot(mapping = aes(x = n, y = resid)) +
+  geom_point(alpha = 0.3) +
+  scale_x_log10() +
+  geom_hline(yintercept = 1.5)
+```
+
+Finally, we plot the temporal course for each unusual cause. 
+
+```{r}
+(devi_350 <- devi %>%
+  filter(n > 350))
+```
+
+
+
