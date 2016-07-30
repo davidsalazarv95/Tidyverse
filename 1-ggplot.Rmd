@@ -1,6 +1,8 @@
 ---
 title: "R Notebook"
-output: html_notebook
+output:
+  html_document: default
+  html_notebook: default
 ---
 
 In brief, the grammar tells us that a statistical graphic is a mapping from __data__ to __aesthetic__ attributes (colour, shape, size) of __geometric objects__ (points, lines, bars).
@@ -18,8 +20,9 @@ library(MASS)
 ```{r}
 mpg %>%
   ggplot(mapping = aes(x = displ, y = hwy)) +
-    geom_point(alpha = 0.3) +
-    theme_tufte()
+    geom_jitter(alpha = 0.6) +
+    geom_smooth(se = F) +
+    theme_minimal()
 ```
 
 To add a dimension, map the dimension class to the plot through the use of a different color for the points. Different types of aesthetic attributes work better with different types of variables. For example, colour and shape work well with categorical variables, while size works well for continuous variables
@@ -92,7 +95,10 @@ ggplot(mpg, aes(displ, colour = drv)) + geom_freqpoly(binwidth = 0.5)
 ```
 
 ```{r}
-ggplot(mpg, aes(displ, fill = drv)) + geom_histogram(binwidth = 0.5) + facet_wrap(~drv, ncol = 1)
+library(viridis)
+ggplot(mpg, aes(displ, fill = drv)) + geom_histogram(binwidth = 0.5) + facet_wrap(~drv, ncol = 1) +
+  scale_fill_viridis(discrete = T) +
+  theme_minimal(base_size = 13)
 ```
 
 ## Distribution for a discrete variable
@@ -100,14 +106,18 @@ ggplot(mpg, aes(displ, fill = drv)) + geom_histogram(binwidth = 0.5) + facet_wra
 The discrete analogue of the histogram is the bar chart, geom bar(). For each category
 
 ```{r}
-
+library(ggthemes)
+library(viridis)
 reorder_size <- function(x) {
   factor(x, levels = names(sort(table(x))))
 }
 mpg %>%
   ggplot(mapping = aes(reorder_size(manufacturer))) +
     geom_bar(alpha = 0.7) +
-    coord_flip()
+    coord_flip() +
+    theme_tufte(base_family = "Arial", base_size = 13, ticks = FALSE) +
+    labs(y = NULL, x = NULL)
+    
 ```
 
 Bar plots can be confusing to construct, as the usual function expects the data to be unorganized, and starts counting how many observations are for each value of the categorical variable. If you already have the data in summarised way, use stat = identity.
@@ -116,7 +126,9 @@ Bar plots can be confusing to construct, as the usual function expects the data 
 drugs <- data.frame(
 drug = c("a", "b", "c"), effect = c(4.2, 9.7, 6.1)
 )
-ggplot(drugs, aes(reorder(drug,effect), effect)) + geom_bar(stat = "identity")
+ggplot(drugs, aes(reorder(drug,effect), effect)) + geom_bar(stat = "identity", fill = 'orange') +
+  theme_tufte(base_family = "Arial", base_size = 13, ticks = FALSE) +
+    labs(y = NULL, x = NULL)
 
 ```
 
@@ -125,7 +137,9 @@ Or even more simpler:
 ```{r}
 drugs %>%
   ggplot(mapping = aes(reorder(drug, effect), effect)) + 
-    geom_point()
+    geom_point() +
+    theme_tufte(base_family = "Arial", base_size = 13, ticks = FALSE) +
+    labs(y = NULL, x = NULL)
 ```
 
 ## Time Series and Path plots
@@ -137,7 +151,8 @@ g1 <- economics %>%
     geom_line()
 g2 <- economics %>%
   ggplot(mapping = aes(x = date, y = uempmed)) +
-    geom_line()
+    geom_line() +
+    theme_tufte(base_family = "Arial", base_size = 13, ticks = FALSE)
 grid.arrange(g1, g2, ncol = 2)
 ```
 
@@ -152,13 +167,15 @@ ggplot(economics, aes(unemploy / pop, uempmed)) +
 But its difficult to recognize the time evolution.
 
 ```{r}
+library(viridis)
 ggplot(economics, aes(unemploy / pop, uempmed)) +
   geom_path(colour = "grey50") +
   geom_point(aes(colour = date)) +
   labs(
     x = "Unemployment rate",
     y = "Median length of unemployment"
-  )
+  ) +
+  theme_tufte(base_family = "Arial", base_size = 13, ticks = FALSE)
 ```
 
 We can see that unemployment rate and length of unemployment are highly correlated, but in recent years the length of unemployment has been increasing relative to the unemployment rate.
